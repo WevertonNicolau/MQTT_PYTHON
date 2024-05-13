@@ -62,7 +62,7 @@ def tratar_feedback(feedback):
             "canal7": {"numero": canal7, "estado": estado7},
             "canal8": {"numero": canal8, "estado": estado8}}
     
-
+i = 'e'
 
 # Callback para quando a conexão com o broker é estabelecida
 def on_connect(client, userdata, flags, rc):
