@@ -61,17 +61,15 @@ def on_message(client, userdata, msg):
         received_messages_text.config(state="disabled")
 
     resultados = tratar_feedback(feedback)
-    print("Resultados:", resultados)  # Mensagem de depuração
+    #print("Resultados:", resultados)  # Mensagem de depuração
     
     for resultado in resultados:
         placa = resultado["placa"]
-        #print("Placa:", placa)  # Mensagem de depuração
         
         for i in range(1, 9):
             canal = f"canal{i}"
             if canal in resultado:
                 estado = resultado[canal]["estado"]
-                #print("Canal:", canal, "Estado:", estado)  # Mensagem de depuração
                 update_circle_color(placa, i, estado)
 
 
@@ -80,36 +78,33 @@ def create_circle(placa, canal):
     if placa_str not in circle_colors:
         circle_colors[placa_str] = {}
     if canal not in circle_colors[placa_str]:
-        default_color = None
-        yellow_circle = tk.Canvas(circle_frames[placa_str], width=10, height=10, bg=default_color, highlightthickness=0)
-        yellow_circle.create_oval(1, 1, 9, 9, fill=None)
+        default_color = "yellow"  # Definindo a cor padrão como amarelo
+        try:
+            yellow_circle = tk.Canvas(circle_frames[placa_str], width=10, height=10, bg=default_color, highlightthickness=0)
+            yellow_circle.create_oval(1, 1, 9, 9, fill=None)
 
-        yellow_circle.pack(side=tk.TOP, padx=2, pady=10)
-        circle_colors[placa_str][canal] = yellow_circle
+            yellow_circle.pack(side=tk.TOP, padx=2, pady=10)
+            circle_colors[placa_str][canal] = yellow_circle
+        except:
+            pass
     else:
         # Se o círculo já existe, apenas atualiza sua cor
         update_circle_color(placa, canal, "D")
 
-
-
 def update_circle_color(placa, canal, status):
     # Convertendo o número da placa para a string correspondente 'Placa X'
     placa_str = 'Placa ' + str(placa[1])
-    #print("Atualizando cor do círculo para placa:", placa_str, "canal:", canal, "estado:", status)  # Mensagem de depuração
-    #print(circle_colors)
 
     if placa_str in circle_colors:
         if canal in circle_colors[placa_str]:
             circle = circle_colors[placa_str][canal]  # Obtemos o círculo correspondente
-            #print("Círculo encontrado:", circle)  # Mensagem de depuração
             
             if status == "D":
-                #print("Alterando cor para vermelho")  # Mensagem de depuração
-                change_circle_color(circle, "red")  # Se o status for "D" (Desligado), altera a cor para vermelho
+               change_circle_color(circle, "red")  # Se o status for "D" (Desligado), altera a cor para vermelho
             elif status == "L":
-                #print("Alterando cor para verde")  # Mensagem de depuração
                 change_circle_color(circle, "green")  # Se o status for "L" (Ligado), altera a cor para verde
             else:
+                change_circle_color(circle, "yellow")
                 print("Status desconhecido:", status)  # Mensagem de depuração
         else:
             print("Canal não encontrado para placa", placa_str)  # Mensagem de depuração
@@ -118,7 +113,6 @@ def update_circle_color(placa, canal, status):
 
 
 def change_circle_color(circle, color):
-    print("Alterando cor do círculo para:", color) # Mensagem de depuração
     circle.config(bg=color)
 
 
@@ -181,9 +175,6 @@ def insert_topic():
         client.loop_stop()   # Para o loop de comunicação
         client = None        # Libera a referência do cliente
 
-    # Cria um novo cliente MQTT com as configurações atualizadas
-    create_and_connect_mqtt_client()
-
 # Envia a porcentagem selecionada
 def send_percentage(event=None):
     percentage = int(percentage_slider.get())  # Converte para inteiro
@@ -238,7 +229,7 @@ for idx, placa in enumerate(placas):
     # Criando os botões para os canais 1 a 8 da Placa
     circle_colors[placa] = {}  # Inicializa o dicionário para esta placa
     for channel in range(1, 9):
-        initial_status = "D"
+        initial_status = None
         create_circle(placa, channel)
         update_circle_color(placa, channel, initial_status)
 
