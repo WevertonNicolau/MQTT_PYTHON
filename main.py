@@ -1,6 +1,6 @@
 # Projeto: Software para analise tecnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.0.1
+# Version: 1.0.0.0
 
 
 import paho.mqtt.client as mqtt
@@ -71,6 +71,7 @@ def on_message(client, userdata, msg):
             if canal in resultado:
                 estado = resultado[canal]["estado"]
                 update_circle_color(placa, i, estado)
+    
 
 
 def create_circle(placa, canal):
@@ -163,7 +164,6 @@ def send_OFF_geral():
 # Define o tópico e reinicia a conexão MQTT
 def insert_topic():
     global publish_topic, subscribe_topic, topic_set, client
-
     topic = topic_entry.get()
     publish_topic = f'/Danf/{topic}/V3/Mqtt/Comando'
     subscribe_topic = f'/Danf/{topic}/V3/Mqtt/Feedback'
@@ -174,6 +174,8 @@ def insert_topic():
         client.disconnect()  # Desconecta do broker MQTT atual
         client.loop_stop()   # Para o loop de comunicação
         client = None        # Libera a referência do cliente
+
+    create_and_connect_mqtt_client()
 
 # Envia a porcentagem selecionada
 def send_percentage(event=None):
@@ -202,31 +204,31 @@ placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Pla
 # Dicionário para armazenar os frames de círculos das bolinhas
 circle_frames = {}
 
-# Criar grupos de botões para cada placa
+    # Criar grupos de botões para cada placa
 for idx, placa in enumerate(placas):
     # Texto da placa
     label_placa = tk.Label(frame_principal, text=placa, padx=10, bg="white", fg="black", font=("Arial", 12, "bold"))
     label_placa.grid(row=0, column=idx * 3, columnspan=3)
 
-    # Frame para os botões ON
+        # Frame para os botões ON
     frame_on = tk.Frame(frame_principal, bg="white")
     frame_on.grid(row=1, column=idx * 3, padx=(5, 2), pady=5)  # Espaçamento menor na lateral direita e um pouco de espaçamento vertical
     frame_on.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-    # Frame para os botões OFF
+        # Frame para os botões OFF
     frame_off = tk.Frame(frame_principal, bg="white")
     frame_off.grid(row=1, column=idx * 3 + 1, padx=(2, 1), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     frame_off.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-    # Frame para os círculos das bolinhas
+        # Frame para os círculos das bolinhas
     circle_frame = tk.Frame(frame_principal, bg="white")
     circle_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     circle_frame.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-    # Salva a referência ao frame do círculo
+        # Salva a referência ao frame do círculo
     circle_frames[placa] = circle_frame
 
-    # Criando os botões para os canais 1 a 8 da Placa
+        # Criando os botões para os canais 1 a 8 da Placa
     circle_colors[placa] = {}  # Inicializa o dicionário para esta placa
     for channel in range(1, 9):
         initial_status = None

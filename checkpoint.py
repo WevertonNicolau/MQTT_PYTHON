@@ -50,7 +50,6 @@ def tratar_feedback(feedback):
 
 # Callback para quando uma mensagem MQTT é recebida
 def on_message(client, userdata, msg):
-    cria(placa,channel, 'y')
     feedback = msg.payload.decode("utf-8")
     print("Feedback recebido:", feedback)  # Mensagem de depuração
     
@@ -165,7 +164,6 @@ def send_OFF_geral():
 # Define o tópico e reinicia a conexão MQTT
 def insert_topic():
     global publish_topic, subscribe_topic, topic_set, client
-
     topic = topic_entry.get()
     publish_topic = f'/Danf/{topic}/V3/Mqtt/Comando'
     subscribe_topic = f'/Danf/{topic}/V3/Mqtt/Feedback'
@@ -176,6 +174,8 @@ def insert_topic():
         client.disconnect()  # Desconecta do broker MQTT atual
         client.loop_stop()   # Para o loop de comunicação
         client = None        # Libera a referência do cliente
+
+    create_and_connect_mqtt_client()
 
 # Envia a porcentagem selecionada
 def send_percentage(event=None):
@@ -188,10 +188,6 @@ def send_percentage(event=None):
 
 def off_Dimmer(canal_id):
     send_message(F'DM00{canal_id}')
-
-def cria(placa,channel, initial_status):
-    create_circle(placa, channel)
-    update_circle_color(placa, channel, initial_status)
 
 # Inicialização da interface gráfica
 root = tk.Tk()
@@ -236,7 +232,8 @@ for idx, placa in enumerate(placas):
     circle_colors[placa] = {}  # Inicializa o dicionário para esta placa
     for channel in range(1, 9):
         initial_status = None
-        cria(placa,channel, initial_status)
+        create_circle(placa, channel)
+        update_circle_color(placa, channel, initial_status)
 
         btn_channel_on = tk.Button(frame_on, text=f"Canal {channel}", command=lambda ch=channel, p=idx + 1: send_ON_command(ch, p), bg="lightgreen", fg="black", width=6, padx=1, pady=1, font=("Arial", 9, "bold"))
         btn_channel_on.pack(side=tk.TOP, padx=2, pady=2)
