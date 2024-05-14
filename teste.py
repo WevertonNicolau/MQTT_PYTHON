@@ -1,3 +1,8 @@
+# Projeto: Software para analise tecnica do painel.
+# Dev: Weverton Nicolau
+# Version: 1.0.0.0
+
+
 import paho.mqtt.client as mqtt
 import time
 import tkinter as tk
@@ -61,8 +66,6 @@ def tratar_feedback(feedback):
             "canal6": {"numero": canal6, "estado": estado6},
             "canal7": {"numero": canal7, "estado": estado7},
             "canal8": {"numero": canal8, "estado": estado8}}
-    
-i = 'e'
 
 # Callback para quando a conexão com o broker é estabelecida
 def on_connect(client, userdata, flags, rc):
