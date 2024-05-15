@@ -1,13 +1,12 @@
 # Projeto: Software para analise tecnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.0.1
-
+# Version: 1.0.0.2
 
 import paho.mqtt.client as mqtt
-import time
 import tkinter as tk
 from tkinter import ttk
 import re
+import time
 
 # Informações do servidor MQTT
 server = 'super-author.cloudmqtt.com'
@@ -28,7 +27,7 @@ topic_set = False
 client = None
 
 def on_connect(client, userdata, flags, rc):
-    print("Conectado com o código de resultado: " + str(rc))
+    print("Conectado com o código de resultado:", rc)
     # Subscreve ao tópico onde queremos receber o feedback
     client.subscribe(subscribe_topic)
 
@@ -46,7 +45,6 @@ def tratar_feedback(feedback):
             resultados.append(resultado)
             print(resultado)
     return resultados
-
 
 # Callback para quando uma mensagem MQTT é recebida
 def on_message(client, userdata, msg):
@@ -71,8 +69,6 @@ def on_message(client, userdata, msg):
             if canal in resultado:
                 estado = resultado[canal]["estado"]
                 update_circle_color(placa, i, estado)
-    
-
 
 def create_circle(placa, canal):
     placa_str = str(placa)  # Convertendo para string
@@ -86,22 +82,20 @@ def create_circle(placa, canal):
 
             yellow_circle.pack(side=tk.TOP, padx=2, pady=10)
             circle_colors[placa_str][canal] = yellow_circle
-        except:
-            pass
+        except Exception as e:
+            print("Erro ao criar círculo:", e)
     else:
         # Se o círculo já existe, apenas atualiza sua cor
         update_circle_color(placa, canal, "D")
 
 def update_circle_color(placa, canal, status):
-    # Convertendo o número da placa para a string correspondente 'Placa X'
     placa_str = 'Placa ' + str(placa[1])
-
     if placa_str in circle_colors:
         if canal in circle_colors[placa_str]:
             circle = circle_colors[placa_str][canal]  # Obtemos o círculo correspondente
-            
+                
             if status == "D":
-               change_circle_color(circle, "red")  # Se o status for "D" (Desligado), altera a cor para vermelho
+                change_circle_color(circle, "red")  # Se o status for "D" (Desligado), altera a cor para vermelho
             elif status == "L":
                 change_circle_color(circle, "green")  # Se o status for "L" (Ligado), altera a cor para verde
             else:
@@ -112,10 +106,8 @@ def update_circle_color(placa, canal, status):
     else:
         print("Placa não encontrada:", placa_str)  # Mensagem de depuração
 
-
 def change_circle_color(circle, color):
     circle.config(bg=color)
-
 
 # Cria e conecta o cliente MQTT
 def create_and_connect_mqtt_client():
@@ -161,6 +153,25 @@ def send_ON_geral():
 def send_OFF_geral():
     send_message("OFAO")
 
+def destroy_circle_frames():
+    global circle_frames, circle_colors
+    for placa, frame in circle_frames.items():
+        frame.destroy()  # Destroi o frame da placa
+    circle_frames = {}  # Limpa o dicionário de frames
+    circle_colors = {}  # Limpa o dicionário de cores
+
+    # Recria os frames de círculos das bolinhas com a cor amarela para cada placa
+    for idx, placa in enumerate(placas):
+        circle_frame = tk.Frame(frame_principal, bg="white")
+        circle_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
+        circle_frame.grid_propagate(False)  # Desativa a propagação automática de tamanho
+        circle_frames[placa] = circle_frame
+
+        circle_colors[placa] = {}  # Inicializa o dicionário para esta placa
+        for channel in range(1, 9):
+            create_circle(placa, channel)
+            update_circle_color(placa, channel, "D")  
+
 # Define o tópico e reinicia a conexão MQTT
 def insert_topic():
     global publish_topic, subscribe_topic, topic_set, client
@@ -168,6 +179,8 @@ def insert_topic():
     publish_topic = f'/Danf/{topic}/V3/Mqtt/Comando'
     subscribe_topic = f'/Danf/{topic}/V3/Mqtt/Feedback'
     topic_set = True
+
+    destroy_circle_frames()
 
     # Reinicia a conexão MQTT com o novo tópico
     if client:
@@ -204,31 +217,31 @@ placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Pla
 # Dicionário para armazenar os frames de círculos das bolinhas
 circle_frames = {}
 
-    # Criar grupos de botões para cada placa
+# Criar grupos de botões para cada placa
 for idx, placa in enumerate(placas):
     # Texto da placa
     label_placa = tk.Label(frame_principal, text=placa, padx=10, bg="white", fg="black", font=("Arial", 12, "bold"))
     label_placa.grid(row=0, column=idx * 3, columnspan=3)
 
-        # Frame para os botões ON
+    # Frame para os botões ON
     frame_on = tk.Frame(frame_principal, bg="white")
     frame_on.grid(row=1, column=idx * 3, padx=(5, 2), pady=5)  # Espaçamento menor na lateral direita e um pouco de espaçamento vertical
     frame_on.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-        # Frame para os botões OFF
+    # Frame para os botões OFF
     frame_off = tk.Frame(frame_principal, bg="white")
     frame_off.grid(row=1, column=idx * 3 + 1, padx=(2, 1), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     frame_off.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-        # Frame para os círculos das bolinhas
+    # Frame para os círculos das bolinhas
     circle_frame = tk.Frame(frame_principal, bg="white")
     circle_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     circle_frame.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-        # Salva a referência ao frame do círculo
+    # Salva a referência ao frame do círculo
     circle_frames[placa] = circle_frame
 
-        # Criando os botões para os canais 1 a 8 da Placa
+    # Criando os botões para os canais 1 a 8 da Placa
     circle_colors[placa] = {}  # Inicializa o dicionário para esta placa
     for channel in range(1, 9):
         initial_status = None
@@ -311,7 +324,7 @@ label_topic.pack(side=tk.LEFT, padx=10, pady=1)
 
 # Caixa de texto para inserir o tópico
 topic_entry = tk.Entry(frame_topic, font=("Arial", 10))
-topic_entry.insert(0, "TESTE_2024")
+topic_entry.insert(0, "2204098DSCV3")
 topic_entry.pack(side=tk.LEFT, padx=10, pady=1)
 
 # Botão para inserir o tópico
@@ -325,7 +338,6 @@ while not topic_set:
 
 # Cria um cliente MQTT após o tópico ser definido
 create_and_connect_mqtt_client()
-
 
 # Mantém a interface gráfica rodando
 root.mainloop()
