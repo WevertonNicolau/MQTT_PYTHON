@@ -324,7 +324,7 @@ label_topic.pack(side=tk.LEFT, padx=10, pady=1)
 
 # Caixa de texto para inserir o tópico
 topic_entry = tk.Entry(frame_topic, font=("Arial", 10))
-topic_entry.insert(0, "2204098DSCV3")
+topic_entry.insert(0, "TESTE_2024")
 topic_entry.pack(side=tk.LEFT, padx=10, pady=1)
 
 # Botão para inserir o tópico
