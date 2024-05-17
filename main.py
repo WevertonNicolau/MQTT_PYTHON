@@ -1,6 +1,6 @@
 # Projeto: Software para analise tecnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.0.2
+# Version: 1.0.0.3
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
