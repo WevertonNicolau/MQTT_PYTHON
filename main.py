@@ -1,6 +1,6 @@
 # Projeto: Software para analise tecnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.0.3
+# Version: 1.0.0.2
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -127,6 +127,14 @@ def send_SA():
 # Envia uma mensagem MQTT
 def send_message(message):
     message = message.upper()
+
+    if message == 'SA' or message == 'SI':
+        received_messages_text.config(state="normal")
+        received_messages_text.delete("1.0", tk.END)
+        received_messages_text.insert(tk.END, "CENTRAL NÃO RESPONDE")
+        received_messages_text.config(state="disabled")
+
+
     client.publish(publish_topic, message)
     print('Mensagem enviada:', message)
 
