@@ -77,11 +77,11 @@ def create_circle(placa, canal):
     if canal not in circle_colors[placa_str]:
         default_color = "yellow"  # Definindo a cor padrão como amarelo
         try:
-            yellow_circle = tk.Canvas(circle_frames[placa_str], width=10, height=10, bg=default_color, highlightthickness=0)
-            yellow_circle.create_oval(1, 1, 9, 9, fill=None)
+            circle = tk.Canvas(circle_frames[placa_str], width=12, height=12, highlightthickness=0)
+            circle.create_oval(2, 2, 10, 10, fill=default_color)  # Cria uma oval preenchida com a cor padrão
 
-            yellow_circle.pack(side=tk.TOP, padx=2, pady=10)
-            circle_colors[placa_str][canal] = yellow_circle
+            circle.pack(side=tk.TOP, padx=2, pady=9)
+            circle_colors[placa_str][canal] = circle
         except Exception as e:
             print("Erro ao criar círculo:", e)
     else:
@@ -107,7 +107,7 @@ def update_circle_color(placa, canal, status):
         print("Placa não encontrada:", placa_str)  # Mensagem de depuração
 
 def change_circle_color(circle, color):
-    circle.config(bg=color)
+    circle.itemconfig(1, fill=color)
 
 # Cria e conecta o cliente MQTT
 def create_and_connect_mqtt_client():
@@ -225,7 +225,7 @@ for idx, placa in enumerate(placas):
 
     # Frame para os botões ON
     frame_on = tk.Frame(frame_principal, bg="white")
-    frame_on.grid(row=1, column=idx * 3, padx=(5, 2), pady=5)  # Espaçamento menor na lateral direita e um pouco de espaçamento vertical
+    frame_on.grid(row=1, column=idx * 3, padx=(2, 2), pady=5)  # Espaçamento menor na lateral direita e um pouco de espaçamento vertical
     frame_on.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
     # Frame para os botões OFF
