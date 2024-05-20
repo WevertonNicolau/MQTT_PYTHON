@@ -27,9 +27,13 @@ topic_set = False
 client = None
 
 def on_connect(client, userdata, flags, rc):
-    print("Conectado com o código de resultado:", rc)
-    # Subscreve ao tópico onde queremos receber o feedback
     client.subscribe(subscribe_topic)
+    print("Conectado com o código de resultado:", rc)
+    if rc == 0:
+        received_messages_text.config(state="normal")
+        received_messages_text.delete("1.0", tk.END)
+        received_messages_text.insert(tk.END, "Conectado ao tópico")
+        received_messages_text.config(state="disabled")
 
 # Função para tratar o feedback recebido
 def tratar_feedback(feedback):
@@ -51,12 +55,12 @@ def on_message(client, userdata, msg):
     feedback = msg.payload.decode("utf-8")
     print("Feedback recebido:", feedback)  # Mensagem de depuração
     
-    if feedback.strip() != "OK":
-        received_messages_text.config(state="normal")
-        received_messages_text.delete("1.0", tk.END)
-        received_messages_text.insert(tk.END, "Feedback: " + feedback + "\n")
-        received_messages_text.delete(f"1.{len(feedback)+10}", tk.END)
-        received_messages_text.config(state="disabled")
+    #if feedback.strip() != "OK":
+    received_messages_text.config(state="normal")
+    received_messages_text.delete("1.0", tk.END)
+    received_messages_text.insert(tk.END, "Feedback: " + feedback + "\n")
+    received_messages_text.delete(f"1.{len(feedback)+10}", tk.END)
+    received_messages_text.config(state="disabled")
 
     resultados = tratar_feedback(feedback)
     #print("Resultados:", resultados)  # Mensagem de depuração
@@ -112,7 +116,13 @@ def change_circle_color(circle, color):
 # Cria e conecta o cliente MQTT
 def create_and_connect_mqtt_client():
     global client
-    client = mqtt.Client()
+    try:
+        client = mqtt.Client()
+    except:
+        received_messages_text.config(state="normal")
+        received_messages_text.delete("1.0", tk.END)
+        received_messages_text.insert(tk.END, "Erro na API :(")
+        received_messages_text.config(state="disabled")
     client.on_connect = on_connect
     client.on_message = on_message
     client.username_pw_set(username, password)
@@ -122,7 +132,6 @@ def create_and_connect_mqtt_client():
 # Envia a mensagem 'SA' a cada 10 segundos
 def send_SA():
     client.publish(publish_topic, "SA")
-    #root.after(10000, send_SA)
 
 # Envia uma mensagem MQTT
 def send_message(message):
@@ -131,12 +140,22 @@ def send_message(message):
     if message == 'SA' or message == 'SI':
         received_messages_text.config(state="normal")
         received_messages_text.delete("1.0", tk.END)
-        received_messages_text.insert(tk.END, "CENTRAL NÃO RESPONDE")
+        received_messages_text.insert(tk.END, "Central não responde :(")
         received_messages_text.config(state="disabled")
 
-
-    client.publish(publish_topic, message)
-    print('Mensagem enviada:', message)
+    try:
+        client.publish(publish_topic, message)
+        print('Mensagem enviada:', message)
+        if message == '':
+            received_messages_text.config(state="normal")
+            received_messages_text.delete("1.0", tk.END)
+            received_messages_text.insert(tk.END, "Insira uma mensagem")
+            received_messages_text.config(state="disabled") 
+    except AttributeError:
+        received_messages_text.config(state="normal")
+        received_messages_text.delete("1.0", tk.END)
+        received_messages_text.insert(tk.END, "Insira um tópico, por favor :)")
+        received_messages_text.config(state="disabled")
 
 # Envia uma mensagem personalizada
 def send_custom_message():
@@ -213,7 +232,7 @@ def off_Dimmer(canal_id):
 # Inicialização da interface gráfica
 root = tk.Tk()
 root.title("DANF MQTT - Beta")
-root.geometry("1370x690")  # Ajusta o tamanho da janela
+root.geometry("1370x700")  # Ajusta o tamanho da janela
 
 # Canvas principal para permitir rolagem horizontal
 canvas = tk.Canvas(root)
@@ -229,7 +248,7 @@ frame_principal = tk.Frame(canvas, bg="white")
 canvas.create_window((0, 0), window=frame_principal, anchor='nw')
 
 # Lista de placas
-placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Placa 7", "Placa 8", "Placa 9", "Placa 10", "Placa 11", "Placa 12", "Placa 13", "Placa 14", "Placa 15", "Placa 16",]
+placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Placa 7", "Placa 8", "Placa 9", "Placa 10", "Placa 11", "Placa 12", "Placa 13", "Placa 14", "Placa 15", "Placa 16"]
 
 # Dicionário para armazenar os frames de círculos das bolinhas
 circle_frames = {}
