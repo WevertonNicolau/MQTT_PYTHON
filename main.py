@@ -1,6 +1,6 @@
-# Projeto: Software para analise tecnica do painel.
+# Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.0.2
+# Version: 1.0.0.3
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -215,12 +215,21 @@ root = tk.Tk()
 root.title("DANF MQTT - Beta")
 root.geometry("1370x690")  # Ajusta o tamanho da janela
 
-# Frame principal
-frame_principal = tk.Frame(root, bg="white")
-frame_principal.pack(side=tk.BOTTOM, pady=10)  # Adiciona espaçamento vertical de 10 pixels
+# Canvas principal para permitir rolagem horizontal
+canvas = tk.Canvas(root)
+canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+
+# Adiciona uma barra de rolagem horizontal ao canvas
+scrollbar = tk.Scrollbar(root, orient=tk.HORIZONTAL, command=canvas.xview)
+scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+canvas.configure(xscrollcommand=scrollbar.set)
+
+# Frame para conter as placas
+frame_principal = tk.Frame(canvas, bg="white")
+canvas.create_window((0, 0), window=frame_principal, anchor='nw')
 
 # Lista de placas
-placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Placa 7", "Placa 8", "Placa 9"]
+placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Placa 7", "Placa 8", "Placa 9", "Placa 10", "Placa 11", "Placa 12", "Placa 13", "Placa 14", "Placa 15", "Placa 16",]
 
 # Dicionário para armazenar os frames de círculos das bolinhas
 circle_frames = {}
@@ -261,6 +270,11 @@ for idx, placa in enumerate(placas):
 
         btn_channel_off = tk.Button(frame_off, text=f"Canal {channel}", command=lambda ch=channel, p=idx + 1: send_OFF_command(ch, p), bg="indianred", fg="black", width=6, padx=1, pady=1, font=("Arial", 9, "bold"))
         btn_channel_off.pack(side=tk.TOP, padx=2, pady=2)
+
+canvas.update_idletasks()
+
+# Define a região rolável do canvas
+canvas.config(scrollregion=canvas.bbox(tk.ALL))
 
 # Frame para os elementos relacionados ao feedback
 frame_feedback = tk.Frame(root, bg="white")
