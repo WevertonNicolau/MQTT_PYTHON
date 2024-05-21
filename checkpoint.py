@@ -129,10 +129,6 @@ def create_and_connect_mqtt_client():
     client.connect(server, port)
     client.loop_start()
 
-# Envia a mensagem 'SA' a cada 10 segundos
-def send_SA():
-    client.publish(publish_topic, "SA")
-
 # Envia uma mensagem MQTT
 def send_message(message):
     message = message.upper()
@@ -144,19 +140,31 @@ def send_message(message):
         received_messages_text.config(state="disabled")
 
     try:
-        client.publish(publish_topic, message)
-        print('Mensagem enviada:', message)
         if message == '':
             received_messages_text.config(state="normal")
             received_messages_text.delete("1.0", tk.END)
             received_messages_text.insert(tk.END, "Insira uma mensagem")
-            received_messages_text.config(state="disabled") 
+            received_messages_text.config(state="disabled")
+        else:
+            if message[0] == 'D':
+                try:
+                    if message[4]:
+                        client.publish(publish_topic, message)
+                        print('Mensagem enviada:', message) 
+                except:
+                    received_messages_text.config(state="normal")
+                    received_messages_text.delete("1.0", tk.END)
+                    received_messages_text.insert(tk.END, "Insira o Canal e o ID")
+                    received_messages_text.config(state="disabled")
+            else:
+                client.publish(publish_topic, message)
+                print('Mensagem enviada:', message)
     except AttributeError:
         received_messages_text.config(state="normal")
         received_messages_text.delete("1.0", tk.END)
         received_messages_text.insert(tk.END, "Insira um tópico, por favor :)")
         received_messages_text.config(state="disabled")
-
+        
 # Envia uma mensagem personalizada
 def send_custom_message():
     message = entry.get()
