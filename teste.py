@@ -1,35 +1,48 @@
-import re
+import ssl
+import json
+import paho.mqtt.client as mqtt
 
-def tratar_feedback(feedback):
-    print("Feedback recebido:", feedback)  # Imprimir o feedback recebido
-    
-    # Remover o '<' do início e dividir o feedback em segmentos com base no caractere '>'
-    segmentos = feedback.split('>')
-    
-    # Inicializar lista para armazenar os resultados
-    resultados = []
+# Preencha com suas credenciais
+AWS_IOT_ENDPOINT = "a1t18s2c9d4xcs-ats.iot.us-east-1.amazonaws.com"
+THINGNAME = "NOME_DO_SEU_DISPOSITIVO"
 
-    # Iterar sobre cada segmento
-    for segmento in segmentos:
-        if segmento:
-            # Encontrar a placa
-            indice_placa = segmento.find('C')
-            placa = segmento[:indice_placa]
-            placa = placa[1:]  # Remover o '<'
-            
-            # Encontrar todos os canais e seus estados na placa
-            canais_estados = re.findall(r'(\d)([LD])', segmento[indice_placa:])
+# Preencha com os caminhos para os arquivos de certificado e chave privada
+AWS_CERT_CA = "ca_cert.pem"
+AWS_CERT_CRT = "cert.pem"
+AWS_CERT_PRIVATE = "private.key"
 
-            # Construir o resultado
-            resultado = {"placa": placa}
-            for i, (canal, estado) in enumerate(canais_estados, start=1):
-                resultado[f"canal{i}"] = {"numero": canal, "estado": estado}
+# Tópicos MQTT
+AWS_IOT_PUBLISH_TOPIC = "esp32/pub"
+AWS_IOT_SUBSCRIBE_TOPIC = "esp32/sub"
 
-            resultados.append(resultado)
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code "+str(rc))
+    client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC)
 
-    return resultados
+def on_message(client, userdata, msg):
+    print("incoming: ", msg.topic)
+    print(msg.payload.decode())
 
-feedback = '<02C1DC2LC3DC4DC5DC6DC7DC8D><04C1DC2DC3DC4LC5DC6DC7DC8D><12C1LC2DC3LC4LC5DC6DC7DC8D><09C1DC2DC3DC4LC5DC6DC7DC8L>'
-leitura = tratar_feedback(feedback)
-for leitura_individual in leitura:
-    print(leitura_individual)
+def connect_aws():
+    client = mqtt.Client(client_id=THINGNAME)
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    client.tls_set(ca_certs=AWS_CERT_CA, certfile=AWS_CERT_CRT, keyfile=AWS_CERT_PRIVATE, cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
+    client.connect(AWS_IOT_ENDPOINT, 8883, keepalive=60)
+    return client
+
+def publish_message(client, metrics_value):
+    payload = json.dumps({"clientID": THINGNAME, "metrics": metrics_value})
+    client.publish(AWS_IOT_PUBLISH_TOPIC, payload)
+
+def main():
+    aws_client = connect_aws()
+
+    while True:
+        metrics_value = 42  # Aqui você pode colocar a lógica para obter o valor das métricas
+        publish_message(aws_client, metrics_value)
+        aws_client.loop()
+
+if __name__ == "__main__":
+    main()
