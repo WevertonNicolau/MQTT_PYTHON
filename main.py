@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.0.6
+# Version: 1.0.0.7
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -93,7 +93,12 @@ def create_circle(placa, canal):
         update_circle_color(placa, canal, "D")
 
 def update_circle_color(placa, canal, status):
-    placa_str = 'Placa ' + str(placa[1])
+    #dentro do dicionario resultados as chaves sao 'Placa' : '01' e os dicionario circle_colors temos so o numero da placa
+    if placa[0] == '0':
+        placa_str = 'Placa ' + str(placa[1])
+    else:
+        placa_str = 'Placa ' + str(placa)
+
     if placa_str in circle_colors:
         if canal in circle_colors[placa_str]:
             circle = circle_colors[placa_str][canal]  # Obtemos o círculo correspondente
