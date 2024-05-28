@@ -261,7 +261,7 @@ frame_principal = tk.Frame(canvas, bg="white")
 canvas.create_window((0, 0), window=frame_principal, anchor='nw')
 
 # Lista de placas
-placas = ["Placa 1", "Placa 2", "Placa 3", "Placa 4", "Placa 5", "Placa 6", "Placa 7", "Placa 8", "Placa 9", "Placa 10", "Placa 11", "Placa 12", "Placa 13", "Placa 14", "Placa 15", "Placa 16"]
+placas = [f"Placa {i}" for i in range(1, 17)]
 
 # Dicionário para armazenar os frames de círculos das bolinhas
 circle_frames = {}
