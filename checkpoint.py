@@ -49,17 +49,13 @@ def tratar_feedback(feedback):
                 canais_estados = re.findall(r'C(\d+)(\d{2})', segmento[5:])
                 resultado = {"dimmer_id": dimmer_id}
                 for canal, porcentagem in canais_estados:
-                    resultado[f"canal{canal}"] = {"porcentagem": int(porcentagem)}
+                    resultado[f"canal{canal}"] = int(porcentagem)
                 resultados.append(resultado)
                 #print(f"Dimmer ID: {dimmer_id}")
-                for canal, dados in resultado.items():
+                for canal in resultado.items():
                     if canal != "dimmer_id":
-                        #print(f"Canal {canal[-1]}: {dados['porcentagem']}%")
-                        if id_canal_entry.get().startswith('c1'):
-                            atualizar_porcentagem_texto1(canal[-1], dados['porcentagem'])
-                        elif id_canal_entry.get().startswith('c2'):
-                            atualizar_porcentagem_texto2(canal[-1], dados['porcentagem'])
-                        print(id_canal_entry.get(),dados['porcentagem'])
+                        atualizar_porcentagem_texto1(resultado['canal1'])
+                        atualizar_porcentagem_texto2(resultado['canal2'])
             else:
                 # Processar feedback padrão
                 placa = segmento[1:3]
@@ -255,11 +251,11 @@ def off_Dimmer(canal_id):
     send_message(F'DM00{canal_id}')
 
 # Atualiza o texto da porcentagem do canal
-def atualizar_porcentagem_texto1(canal, porcentagem):
-    porcentagem_texto1.config(text=f'C1:{porcentagem}%')
+def atualizar_porcentagem_texto1(porcentagem):
+    porcentagem_texto1.config(text=f'C1: {porcentagem}%')
 
-def atualizar_porcentagem_texto2(canal, porcentagem):
-    porcentagem_texto2.config(text=f'C2:{porcentagem}%')
+def atualizar_porcentagem_texto2(porcentagem):
+    porcentagem_texto2.config(text=f'C2: {porcentagem}%')
 
 # Inicialização da interface gráfica
 root = tk.Tk()
@@ -317,11 +313,6 @@ for idx, placa in enumerate(placas):
     frame_off.grid(row=1, column=idx * 3 + 1, padx=(2, 1), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     frame_off.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
-    # Frame para os círculos das bolinhas
-    circle_frame = tk.Frame(frame_principal, bg="white")
-    circle_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
-    circle_frame.grid_propagate(False)  # Desativa a propagação automática de tamanho
-
     # Salva a referência ao frame do círculo
     lamp_frames[placa] = lamp_frame
 
@@ -370,10 +361,10 @@ percentage_label.pack(side=tk.LEFT, padx=10, pady=1)
 percentage_slider = ttk.Scale(frame_percentage, from_=00, to=99, orient=tk.HORIZONTAL, command=send_percentage)
 percentage_slider.pack(side=tk.LEFT, padx=10, pady=1)
 
-porcentagem_texto1 = tk.Label(frame_percentage, text='C1:0%', bg="white", font=("Arial", 10))
+porcentagem_texto1 = tk.Label(frame_percentage, text='C1: 0%', bg="white", font=("Arial", 10))
 porcentagem_texto1.pack(side=tk.LEFT, padx=10, pady=1)
 
-porcentagem_texto2 = tk.Label(frame_percentage, text='C2:0%', bg="white", font=("Arial", 10))
+porcentagem_texto2 = tk.Label(frame_percentage, text='C2: 0%', bg="white", font=("Arial", 10))
 porcentagem_texto2.pack(side=tk.LEFT, padx=10, pady=1)
 
 btn_off_dimmer = tk.Button(frame_percentage, text="OFF", command=lambda: off_Dimmer(id_canal_entry.get()), bg="indianred", fg="white", font=("Arial", 10, "bold"))
