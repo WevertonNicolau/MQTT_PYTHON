@@ -3,12 +3,12 @@ import json
 import paho.mqtt.client as mqtt
 
 # Preencha com suas credenciais
-AWS_IOT_ENDPOINT = "a1t18s2c9d4xcs-ats.iot.us-east-1.amazonaws.com"
-THINGNAME = "NOME_DO_SEU_DISPOSITIVO"
+AWS_IOT_ENDPOINT = "a27psqlmoxrfep-ats.iot.us-east-1.amazonaws.com"
+THINGNAME = "TESTE2"
 
 # Preencha com os caminhos para os arquivos de certificado e chave privada
-AWS_CERT_CA = "ca_cert.pem"
-AWS_CERT_CRT = "cert.pem"
+AWS_CERT_CA = "ca1.pem"
+AWS_CERT_CRT = "certificado.pem"
 AWS_CERT_PRIVATE = "private.key"
 
 # Tópicos MQTT
@@ -16,7 +16,7 @@ AWS_IOT_PUBLISH_TOPIC = "esp32/pub"
 AWS_IOT_SUBSCRIBE_TOPIC = "esp32/sub"
 
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+    print("Conectado com resultado: "+str(rc))
     client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC)
 
 def on_message(client, userdata, msg):
@@ -24,7 +24,7 @@ def on_message(client, userdata, msg):
     print(msg.payload.decode())
 
 def connect_aws():
-    client = mqtt.Client(client_id=THINGNAME)
+    client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
 
@@ -38,11 +38,9 @@ def publish_message(client, metrics_value):
 
 def main():
     aws_client = connect_aws()
-
-    while True:
-        metrics_value = 42  # Aqui você pode colocar a lógica para obter o valor das métricas
-        publish_message(aws_client, metrics_value)
-        aws_client.loop()
-
+    metrics_value = 'teste wn'  # Aqui você pode colocar a lógica para obter o valor das métricas
+    publish_message(aws_client, metrics_value)
+    aws_client.loop()
+        
 if __name__ == "__main__":
     main()

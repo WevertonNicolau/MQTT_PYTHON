@@ -51,14 +51,15 @@ def tratar_feedback(feedback):
                 for canal, porcentagem in canais_estados:
                     resultado[f"canal{canal}"] = {"porcentagem": int(porcentagem)}
                 resultados.append(resultado)
-                print(f"Dimmer ID: {dimmer_id}")
+                #print(f"Dimmer ID: {dimmer_id}")
                 for canal, dados in resultado.items():
                     if canal != "dimmer_id":
-                        print(f"Canal {canal[-1]}: {dados['porcentagem']}%")
+                        #print(f"Canal {canal[-1]}: {dados['porcentagem']}%")
                         if id_canal_entry.get().startswith('c1'):
-                            atualizar_porcentagem_texto(canal[-1], dados['porcentagem'])
+                            atualizar_porcentagem_texto1(canal[-1], dados['porcentagem'])
                         elif id_canal_entry.get().startswith('c2'):
-                            atualizar_porcentagem_texto(canal, dados['porcentagem'])
+                            atualizar_porcentagem_texto2(canal[-1], dados['porcentagem'])
+                        print(id_canal_entry.get(),dados['porcentagem'])
             else:
                 # Processar feedback padrão
                 placa = segmento[1:3]
@@ -73,7 +74,7 @@ def tratar_feedback(feedback):
 # Callback para quando uma mensagem MQTT é recebida
 def on_message(client, userdata, msg):
     feedback = msg.payload.decode("utf-8")
-    print("Feedback recebido:", feedback)  # Mensagem de depuração
+    #print("Feedback recebido:", feedback)  # Mensagem de depuração
     
     received_messages_text.config(state="normal")
     received_messages_text.delete("1.0", tk.END)
@@ -254,8 +255,11 @@ def off_Dimmer(canal_id):
     send_message(F'DM00{canal_id}')
 
 # Atualiza o texto da porcentagem do canal
-def atualizar_porcentagem_texto(canal, porcentagem):
-    porcentagem_texto.config(text=f'{porcentagem}%')
+def atualizar_porcentagem_texto1(canal, porcentagem):
+    porcentagem_texto1.config(text=f'C1:{porcentagem}%')
+
+def atualizar_porcentagem_texto2(canal, porcentagem):
+    porcentagem_texto2.config(text=f'C2:{porcentagem}%')
 
 # Inicialização da interface gráfica
 root = tk.Tk()
@@ -366,8 +370,11 @@ percentage_label.pack(side=tk.LEFT, padx=10, pady=1)
 percentage_slider = ttk.Scale(frame_percentage, from_=00, to=99, orient=tk.HORIZONTAL, command=send_percentage)
 percentage_slider.pack(side=tk.LEFT, padx=10, pady=1)
 
-porcentagem_texto = tk.Label(frame_percentage, text='0%', bg="white", font=("Arial", 10))
-porcentagem_texto.pack(side=tk.LEFT, padx=10, pady=1)
+porcentagem_texto1 = tk.Label(frame_percentage, text='C1:0%', bg="white", font=("Arial", 10))
+porcentagem_texto1.pack(side=tk.LEFT, padx=10, pady=1)
+
+porcentagem_texto2 = tk.Label(frame_percentage, text='C2:0%', bg="white", font=("Arial", 10))
+porcentagem_texto2.pack(side=tk.LEFT, padx=10, pady=1)
 
 btn_off_dimmer = tk.Button(frame_percentage, text="OFF", command=lambda: off_Dimmer(id_canal_entry.get()), bg="indianred", fg="white", font=("Arial", 10, "bold"))
 btn_off_dimmer.pack(side=tk.LEFT, padx=5, pady=1)
