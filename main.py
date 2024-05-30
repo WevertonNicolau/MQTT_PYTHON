@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.1.2
+# Version: 1.0.1.5
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -94,13 +94,13 @@ def create_lamp_label(placa, canal):
     if placa_str not in lamp_labels:
         lamp_labels[placa_str] = {}
         # Cria a lâmpada de feedback da placa
-        feedback_label = tk.Label(lamp_frames[placa_str], image=imageNone, bg="white")
+        feedback_label = tk.Label(lamp_frames[placa_str], image=imageNone, bg=color_p)
         feedback_label.pack(side=tk.TOP, padx=2, pady=5)
         lamp_labels[placa_str]["feedback"] = feedback_label
     if canal not in lamp_labels[placa_str]:
         default_image = imageNone
         try:
-            lamp_label = tk.Label(lamp_frames[placa_str], image=default_image, bg="white")
+            lamp_label = tk.Label(lamp_frames[placa_str], image=default_image, bg=color_p)
             lamp_label.pack(side=tk.TOP, padx=2, pady=5)
             lamp_labels[placa_str][canal] = lamp_label
         except Exception as e:
@@ -225,16 +225,11 @@ def destroy_lamp_frames():
     lamp_frames = {}
     lamp_labels = {}
     for idx, placa in enumerate(placas):
-        lamp_frame = tk.Frame(frame_principal, bg="white")
+        lamp_frame = tk.Frame(frame_principal, bg=color_p)
         lamp_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)
         lamp_frames[placa] = lamp_frame
         for canal in range(1, 9):
             create_lamp_label(placa, canal)
-            
-    lamp_label_dimmer1 = tk.Label(frame_principal, image=imageNone, bg="white")
-    lamp_label_dimmer1.grid(row=1, column=len(placas)*3 + 2, padx=(1, 15), pady=5)
-    lamp_label_dimmer2 = tk.Label(frame_principal, image=imageNone, bg="white")
-    lamp_label_dimmer2.grid(row=1, column=len(placas)*3 + 4, padx=(1, 15), pady=5)
 
 # Define o tópico e reinicia a conexão MQTT
 def insert_topic():
@@ -268,7 +263,7 @@ def atualizar_porcentagem_texto2(porcentagem):
 
 def send_ON_placa(placa):
     for channel in range(1, 9):
-        time.sleep(0.02)
+        time.sleep(0.05)
         if placa < 10:
             send_message(f"OFONC{channel}0{placa}")
         else:
@@ -276,16 +271,19 @@ def send_ON_placa(placa):
 # Função para desligar todos os canais de uma placa específica
 def send_OFF_placa(placa):
     for channel in range(1, 9):
-        time.sleep(0.02)
+        time.sleep(0.05)
         if placa < 10:
             send_message(f"OFFFC{channel}0{placa}")
         else:
             send_message(f"OFFFC{channel}{placa}")
 
+color_p = 'lightgray'
+
 # Inicialização da interface gráfica
 root = tk.Tk()
-root.title("DANF MQTT - Beta")
+root.title("DANF - MQTT")
 root.geometry("1370x730")  # Ajusta o tamanho da janela
+root.configure(bg=color_p)
 
 imageOff = 'img/lampadaapagada.png'
 imageOn = 'img/lampadaacesa.png'
@@ -309,7 +307,7 @@ scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 canvas.configure(xscrollcommand=scrollbar.set)
 
 # Frame para conter as placas
-frame_principal = tk.Frame(canvas, bg="white")
+frame_principal = tk.Frame(canvas, bg=color_p)
 canvas.create_window((0, 0), window=frame_principal, anchor='nw')
 
 # Lista de placas
@@ -319,22 +317,22 @@ lamp_frames = {}
 
 # Criar grupos de botões para cada placa
 for idx, placa in enumerate(placas):
-    lamp_frame = tk.Frame(frame_principal, bg="white")
+    lamp_frame = tk.Frame(frame_principal, bg=color_p)
     lamp_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     lamp_frame.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
     lamp_labels[placa] = {}
     # Texto da placa
-    label_placa = tk.Label(frame_principal, text=placa, padx=10, bg="white", fg="black", font=("Arial", 12, "bold"))
+    label_placa = tk.Label(frame_principal, text=placa, padx=10, bg=color_p, fg="black", font=("Arial", 12, "bold"))
     label_placa.grid(row=0, column=idx * 3, columnspan=3)
 
     # Frame para os botões ON
-    frame_on = tk.Frame(frame_principal, bg="white")
+    frame_on = tk.Frame(frame_principal, bg=color_p)
     frame_on.grid(row=1, column=idx * 3, padx=(2, 2), pady=5)  # Espaçamento menor na lateral direita e um pouco de espaçamento vertical
     frame_on.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
     # Frame para os botões OFF
-    frame_off = tk.Frame(frame_principal, bg="white")
+    frame_off = tk.Frame(frame_principal, bg=color_p)
     frame_off.grid(row=1, column=idx * 3 + 1, padx=(2, 1), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
     frame_off.grid_propagate(False)  # Desativa a propagação automática de tamanho
 
@@ -367,7 +365,7 @@ canvas.update_idletasks()
 canvas.config(scrollregion=canvas.bbox(tk.ALL))
 
 # Frame para os elementos relacionados ao feedback
-frame_feedback = tk.Frame(root, bg="white")
+frame_feedback = tk.Frame(root, bg=color_p)
 frame_feedback.pack(side=tk.BOTTOM, pady=10)  # Adiciona espaçamento vertical de 10 pixels
 
 # Widget de texto para exibir mensagens recebidas
@@ -375,78 +373,79 @@ received_messages_text = tk.Text(frame_feedback, height=10, width=50, bg="lightg
 received_messages_text.pack(side=tk.BOTTOM, padx=10, pady=5)
 
 # Botões para ligar/desligar geral
-frame_geral = tk.Frame(root, bg="white")
+frame_geral = tk.Frame(root, bg=color_p)
 frame_geral.pack(side=tk.BOTTOM, pady=10)
 
-btn_on_geral = tk.Button(frame_geral, text="ON Geral", command=send_ON_geral, bg="lightgreen", fg="white", font=("Arial", 10, "bold"))
+btn_on_geral = tk.Button(frame_geral, text="ON Geral", command=send_ON_geral, bg="lightgreen", fg='black', font=("Arial", 10, "bold"))
 btn_on_geral.pack(side=tk.LEFT, padx=5, pady=1)
 
-btn_off_geral = tk.Button(frame_geral, text="OFF Geral", command=send_OFF_geral, bg="indianred", fg="white", font=("Arial", 10, "bold"))
+btn_off_geral = tk.Button(frame_geral, text="OFF Geral", command=send_OFF_geral, bg="indianred", fg='black', font=("Arial", 10, "bold"))
 btn_off_geral.pack(side=tk.LEFT, padx=5, pady=1)
 
-# Frame para a barra de porcentagem
-frame_percentage = tk.Frame(root, bg="white")
-frame_percentage.pack(side=tk.BOTTOM, pady=3)  # Adiciona espaçamento vertical de 10 pixels
+frame_percentage = tk.Frame(root, bg="lightgray")
+frame_percentage.pack(side=tk.BOTTOM, pady=3)
 
-# Label para a barra de porcentagem
-percentage_label = tk.Label(frame_percentage, text="DIMMER:", bg="white", font=("Arial", 10))
-percentage_label.pack(side=tk.LEFT, padx=10, pady=1)
+percentage_label = tk.Label(frame_percentage, text="Dimmer:", fg="black", bg="lightgray")
+percentage_label.pack(side=tk.LEFT, padx=(45,10))
 
-# Slider para a barra de porcentagem
-percentage_slider = ttk.Scale(frame_percentage, from_=00, to=99, orient=tk.HORIZONTAL, command=send_percentage)
-percentage_slider.pack(side=tk.LEFT, padx=10, pady=1)
+style = ttk.Style()
+style.configure("Custom.Horizontal.TScale",background="gray") 
 
-porcentagem_texto1 = tk.Label(frame_percentage, text='C1: 0%', bg="white", font=("Arial", 10))
+# Aplicar o estilo personalizado à escala
+percentage_slider = ttk.Scale(frame_percentage, from_=0, to=99, orient=tk.HORIZONTAL, command=send_percentage, style="Custom.Horizontal.TScale")
+percentage_slider.pack(side=tk.LEFT)
+
+porcentagem_texto1 = tk.Label(frame_percentage, text='C1: 0%', bg=color_p, font=("Arial", 10))
 porcentagem_texto1.pack(side=tk.LEFT, padx=10, pady=1)
 
-porcentagem_texto2 = tk.Label(frame_percentage, text='C2: 0%', bg="white", font=("Arial", 10))
+porcentagem_texto2 = tk.Label(frame_percentage, text='C2: 0%', bg=color_p, font=("Arial", 10))
 porcentagem_texto2.pack(side=tk.LEFT, padx=10, pady=1)
 
-btn_off_dimmer = tk.Button(frame_percentage, text="OFF", command=lambda: off_Dimmer(id_canal_entry.get()), bg="indianred", fg="white", font=("Arial", 10, "bold"))
+btn_off_dimmer = tk.Button(frame_percentage, text="OFF", command=lambda: off_Dimmer(id_canal_entry.get()), bg="indianred", fg='black', font=("Arial", 10, "bold"))
 btn_off_dimmer.pack(side=tk.LEFT, padx=5, pady=1)
 # Frame para os elementos relacionados ao ID e CANAL
-frame_id_canal = tk.Frame(root, bg="white")
+frame_id_canal = tk.Frame(root, bg=color_p)
 frame_id_canal.pack(side=tk.BOTTOM, pady=0)  # Adiciona espaçamento vertical de 10 pixels
 
 # Texto 'ID e Canal' atrás da caixa de inserir ID e canal
-label_id_canal = tk.Label(frame_id_canal, text="Canal e ID:", bg="white", font=("Arial", 10))
-label_id_canal.pack(side=tk.LEFT, padx=10, pady=0)
+label_id_canal = tk.Label(frame_id_canal, text="Canal e ID:", bg=color_p, font=("Arial", 10))
+label_id_canal.pack(side=tk.LEFT, padx=(0,5), pady=10)
 
 # Caixa de texto para inserir o ID e o CANAL
 id_canal_entry = tk.Entry(frame_id_canal, font=("Arial", 10))
-id_canal_entry.pack(side=tk.LEFT, padx=10, pady=0)
+id_canal_entry.pack(side=tk.LEFT, padx=(0,115), pady=0)
 
 # Frame para os elementos relacionados ao envio de mensagem
-frame_send = tk.Frame(root, bg="white")
-frame_send.pack(side=tk.BOTTOM, pady=10)  # Adiciona espaçamento vertical de 10 pixels
+frame_send = tk.Frame(root, bg=color_p)
+frame_send.pack(side=tk.BOTTOM, pady=5)  # Adiciona espaçamento vertical de 10 pixels
 
 # Texto 'Mensagem' atrás da caixa de inserir mensagem
-label_message = tk.Label(frame_send, text="Mensagem:", bg="white", font=("Arial", 10))
-label_message.pack(side=tk.LEFT, padx=10, pady=1)
+label_message = tk.Label(frame_send, text="Mensagem:", bg=color_p, font=("Arial", 10))
+label_message.pack(side=tk.LEFT, padx=(25,0), pady=1)
 
 # Caixa de texto para enviar mensagens personalizadas
 entry = tk.Entry(frame_send, font=("Arial", 10))
-entry.pack(side=tk.LEFT, padx=10, pady=10)
+entry.pack(side=tk.LEFT, padx=(5,10), pady=5)
 
 # Botão para enviar mensagem personalizada
-btn_send = tk.Button(frame_send, text="Enviar Mensagem", command=send_custom_message, bg="blue", fg="white", font=("Arial", 10, "bold"))
+btn_send = tk.Button(frame_send, text="Enviar Mensagem", command=send_custom_message, bg="gray", fg='white', font=("Arial", 10, "bold"))
 btn_send.pack(side=tk.LEFT, padx=5, pady=1)  # Ajusta o padding do botão
 
 # Botão para os elementos relacionados ao tópico
-frame_topic = tk.Frame(root, bg="white")
+frame_topic = tk.Frame(root, bg=color_p)
 frame_topic.pack(side=tk.BOTTOM, pady=1)  # Adiciona espaçamento vertical de 10 pixels
 
 # Texto 'Tópico' atrás da caixa de inserir tópico
-label_topic = tk.Label(frame_topic, text="Tópico:", bg="white", font=("Arial", 10))
-label_topic.pack(side=tk.LEFT, padx=10, pady=1)
+label_topic = tk.Label(frame_topic, text="Tópico:", bg=color_p, font=("Arial", 10))
+label_topic.pack(side=tk.LEFT, padx=(25,5), pady=10)
 
 # Caixa de texto para inserir o tópico
 topic_entry = tk.Entry(frame_topic, font=("Arial", 10))
 topic_entry.insert(0, "TESTE_2024")
-topic_entry.pack(side=tk.LEFT, padx=10, pady=1)
+topic_entry.pack(side=tk.LEFT, padx=(0,10), pady=1)
 
 # Botão para inserir o tópico
-btn_insert_topic = tk.Button(frame_topic, text="Inserir Tópico", command=insert_topic, bg="blue", fg="white", font=("Arial", 10, "bold"))
+btn_insert_topic = tk.Button(frame_topic, text="Inserir Tópico", command=insert_topic, bg="gray", fg='white', font=("Arial", 10, "bold"))
 btn_insert_topic.pack(side=tk.LEFT, padx=5, pady=5)  # Ajusta o padding do botão
 
 # Mantém o programa rodando para receber mensagens somente após o tópico ser definido
