@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.1.0
+# Version: 1.0.1.2
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -19,7 +19,6 @@ publish_topic = f'/Danf/{default_topic}/V3/Mqtt/Comando'
 subscribe_topic = f'/Danf/{default_topic}/V3/Mqtt/Feedback'
 
 # Dicionário para armazenar as imagens das lâmpadas
-lamp_images = {}
 lamp_labels = {}
 
 # Variável para verificar se o tópico foi definido
@@ -88,15 +87,18 @@ def on_message(client, userdata, msg):
                 if canal in resultado:
                     estado = resultado[canal]["estado"]
                     update_lamp_image(placa, i, estado)
-
-            
+            update_placa_feedback(placa)
 
 def create_lamp_label(placa, canal):
-    placa_str = str(placa)  # Convertendo para string
+    placa_str = str(placa)
     if placa_str not in lamp_labels:
         lamp_labels[placa_str] = {}
+        # Cria a lâmpada de feedback da placa
+        feedback_label = tk.Label(lamp_frames[placa_str], image=imageNone, bg="white")
+        feedback_label.pack(side=tk.TOP, padx=2, pady=5)
+        lamp_labels[placa_str]["feedback"] = feedback_label
     if canal not in lamp_labels[placa_str]:
-        default_image = imageNone  # Definindo a imagem padrão como não encontrada
+        default_image = imageNone
         try:
             lamp_label = tk.Label(lamp_frames[placa_str], image=default_image, bg="white")
             lamp_label.pack(side=tk.TOP, padx=2, pady=5)
@@ -104,30 +106,37 @@ def create_lamp_label(placa, canal):
         except Exception as e:
             print("Erro ao criar lâmpada:", e)
     else:
-        # Se a lâmpada já existe, apenas atualiza sua imagem
         update_lamp_image(placa, canal, "D")
 
 def update_lamp_image(placa, canal, status):
-    if placa[0] == '0':
-        placa_str = 'Placa ' + str(placa[1])
-    else:
-        placa_str = 'Placa ' + str(placa)
-
+    placa_str = 'Placa ' + str(placa).lstrip('0')
     if placa_str in lamp_labels:
         if canal in lamp_labels[placa_str]:
-            lamp_label = lamp_labels[placa_str][canal]  # Obtemos a lâmpada correspondente
-                
+            lamp_label = lamp_labels[placa_str][canal]
+            update_placa_feedback(placa_str)
             if status == "D":
-                change_lamp_image(lamp_label, imageOff)  # Se o status for "D" (Desligado), altera a imagem para apagada
+                change_lamp_image(lamp_label, imageOff)
             elif status == "L":
-                change_lamp_image(lamp_label, imageOn)  # Se o status for "L" (Ligado), altera a imagem para acesa
+                change_lamp_image(lamp_label, imageOn)
             else:
                 change_lamp_image(lamp_label, imageNone)
-                print("Status desconhecido:", status)  # Mensagem de depuração
+                print("Status desconhecido:", status)
         else:
-            print("Canal não encontrado para placa", placa_str)  # Mensagem de depuração
+            print("Canal não encontrado para placa", placa_str)
     else:
-        print("Placa não encontrada:", placa_str)  # Mensagem de depuração
+        print("Placa não encontrada:", placa_str)
+
+def update_placa_feedback(placa):
+    placa_str = 'Placa ' + str(placa).lstrip('0')
+    if placa_str in lamp_labels:
+        feedback_label = lamp_labels[placa_str].get("feedback")
+        if feedback_label:
+            any_on = any(
+                lamp_label.cget("image") == str(imageOn)
+                for lamp_label in lamp_labels[placa_str].values()
+                if lamp_label != feedback_label
+            )
+            change_lamp_image(feedback_label, imageOn if any_on else imageOff)
 
 def change_lamp_image(lamp_label, image):
     lamp_label.config(image=image)
@@ -208,24 +217,24 @@ def send_ON_geral():
 def send_OFF_geral():
     send_message("OFAO")
 
+
 def destroy_lamp_frames():
     global lamp_frames, lamp_labels
     for placa, frame in lamp_frames.items():
-        frame.destroy()  # Destroi o frame da placa
-    lamp_frames = {}  # Limpa o dicionário de frames
-    lamp_labels = {}  # Limpa o dicionário de lâmpadas
-
-    # Recria os frames de lâmpadas com a imagem de não encontrada para cada placa
+        frame.destroy()
+    lamp_frames = {}
+    lamp_labels = {}
     for idx, placa in enumerate(placas):
         lamp_frame = tk.Frame(frame_principal, bg="white")
-        lamp_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
-        lamp_frame.grid_propagate(False)  # Desativa a propagação automática de tamanho
+        lamp_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)
         lamp_frames[placa] = lamp_frame
-
-        lamp_labels[placa] = {}  # Inicializa o dicionário para esta placa
-        for channel in range(1, 9):
-            create_lamp_label(placa, channel)
-            update_lamp_image(placa, channel, "D")  
+        for canal in range(1, 9):
+            create_lamp_label(placa, canal)
+            
+    lamp_label_dimmer1 = tk.Label(frame_principal, image=imageNone, bg="white")
+    lamp_label_dimmer1.grid(row=1, column=len(placas)*3 + 2, padx=(1, 15), pady=5)
+    lamp_label_dimmer2 = tk.Label(frame_principal, image=imageNone, bg="white")
+    lamp_label_dimmer2.grid(row=1, column=len(placas)*3 + 4, padx=(1, 15), pady=5)
 
 # Define o tópico e reinicia a conexão MQTT
 def insert_topic():
@@ -257,10 +266,26 @@ def atualizar_porcentagem_texto1(porcentagem):
 def atualizar_porcentagem_texto2(porcentagem):
     porcentagem_texto2.config(text=f'C2: {porcentagem}%')
 
+def send_ON_placa(placa):
+    for channel in range(1, 9):
+        time.sleep(0.02)
+        if placa < 10:
+            send_message(f"OFONC{channel}0{placa}")
+        else:
+            send_message(f"OFONC{channel}{placa}")
+# Função para desligar todos os canais de uma placa específica
+def send_OFF_placa(placa):
+    for channel in range(1, 9):
+        time.sleep(0.02)
+        if placa < 10:
+            send_message(f"OFFFC{channel}0{placa}")
+        else:
+            send_message(f"OFFFC{channel}{placa}")
+
 # Inicialização da interface gráfica
 root = tk.Tk()
 root.title("DANF MQTT - Beta")
-root.geometry("1370x700")  # Ajusta o tamanho da janela
+root.geometry("1370x730")  # Ajusta o tamanho da janela
 
 imageOff = 'img/lampadaapagada.png'
 imageOn = 'img/lampadaacesa.png'
@@ -316,6 +341,16 @@ for idx, placa in enumerate(placas):
     # Salva a referência ao frame do círculo
     lamp_frames[placa] = lamp_frame
 
+    channel = None
+
+    create_lamp_label(placa, channel)
+
+    btn_ON_placa = tk.Button(frame_on, text=f"On", command=lambda ch=channel, p=idx + 1: send_ON_placa(p), bg="lightgreen", fg="black", width=6, padx=1, pady=1, font=("Arial", 9, "bold"))
+    btn_ON_placa.pack(side=tk.TOP, padx=2, pady=2)
+
+    btn_OFF_placa = tk.Button(frame_off, text=f"Off", command=lambda ch=channel, p=idx + 1: send_OFF_placa(p), bg="indianred", fg="black", width=6, padx=1, pady=1, font=("Arial", 9, "bold"))
+    btn_OFF_placa.pack(side=tk.TOP, padx=2, pady=2)
+    
     # Criando os botões para os canais 1 a 8 da Placa
     for channel in range(1, 9):
         create_lamp_label(placa, channel)
