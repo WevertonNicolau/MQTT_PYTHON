@@ -279,7 +279,7 @@ def send_OFF_placa(placa):
             send_message(f"OFFFC{channel}{placa}")
 
 def filter_combobox_suggestions(event):
-    root.after(100, update_combobox_values)
+    root.after(100, update_combobox_values) 
     
 def update_combobox_values():
     value = combobox.get().upper()
