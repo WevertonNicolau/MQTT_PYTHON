@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.1.5
+# Version: 1.0.2.0
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -8,6 +8,7 @@ from tkinter import ttk
 import re
 import time
 from PIL import Image, ImageTk
+import sqlite3
 
 # Informações do servidor MQTT
 server = 'super-author.cloudmqtt.com'
@@ -263,7 +264,7 @@ def atualizar_porcentagem_texto2(porcentagem):
 
 def send_ON_placa(placa):
     for channel in range(1, 9):
-        time.sleep(0.05)
+        time.sleep(0.1)
         if placa < 10:
             send_message(f"OFONC{channel}0{placa}")
         else:
@@ -271,12 +272,44 @@ def send_ON_placa(placa):
 # Função para desligar todos os canais de uma placa específica
 def send_OFF_placa(placa):
     for channel in range(1, 9):
-        time.sleep(0.05)
+        time.sleep(0.1)
         if placa < 10:
             send_message(f"OFFFC{channel}0{placa}")
         else:
             send_message(f"OFFFC{channel}{placa}")
 
+def filter_combobox_suggestions(event):
+    root.after(100, update_combobox_values)
+    
+def update_combobox_values():
+    value = combobox.get().upper()
+    if value == '':
+        combobox['values'] = list(original_values.keys())  # Mostra todos os valores quando o texto é apagado
+    else:
+        data = [item for item in original_values.keys() if value in item.upper()]
+        combobox['values'] = data
+
+    combobox.event_generate('<Down>')
+    topic_entry.delete("0", tk.END)
+    topic_entry.insert(0, original_values[combobox.get()])
+
+def get_client_data():
+    conn = sqlite3.connect('Clientes.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('CREATE TABLE IF NOT EXISTS Clientes ('  # Executa uma instrução SQL para criar uma tabela chamada 'clientes'
+            'Nome TEXT,'  # Define a coluna 'nome' como do tipo texto
+            'Topico TEXT'  # Define a coluna 'peso' como do tipo real (número decimal)
+            ')')
+
+    cursor.execute('SELECT Nome, Topico FROM Clientes')
+    rows = cursor.fetchall()
+    
+    conn.close()
+    
+    # Cria um dicionário onde a chave é o nome e o valor é o tópico
+    return {row[0]: row[1] for row in rows}
+     
 color_p = 'lightgray'
 
 # Inicialização da interface gráfica
@@ -437,7 +470,7 @@ frame_topic.pack(side=tk.BOTTOM, pady=1)  # Adiciona espaçamento vertical de 10
 
 # Texto 'Tópico' atrás da caixa de inserir tópico
 label_topic = tk.Label(frame_topic, text="Tópico:", bg=color_p, font=("Arial", 10))
-label_topic.pack(side=tk.LEFT, padx=(25,5), pady=10)
+label_topic.pack(side=tk.LEFT, padx=(180,5), pady=10)
 
 # Caixa de texto para inserir o tópico
 topic_entry = tk.Entry(frame_topic, font=("Arial", 10))
@@ -446,7 +479,12 @@ topic_entry.pack(side=tk.LEFT, padx=(0,10), pady=1)
 
 # Botão para inserir o tópico
 btn_insert_topic = tk.Button(frame_topic, text="Inserir Tópico", command=insert_topic, bg="gray", fg='white', font=("Arial", 10, "bold"))
-btn_insert_topic.pack(side=tk.LEFT, padx=5, pady=5)  # Ajusta o padding do botão
+btn_insert_topic.pack(side=tk.LEFT, padx=(5,10), pady=5)  # Ajusta o padding do botão
+
+original_values = get_client_data()
+combobox = ttk.Combobox(frame_topic, values=list(original_values.keys()))
+combobox.pack(side=tk.LEFT, padx=(10,10), pady=1)
+combobox.bind('<KeyRelease>', filter_combobox_suggestions)
 
 # Mantém o programa rodando para receber mensagens somente após o tópico ser definido
 while not topic_set:
