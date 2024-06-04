@@ -399,7 +399,7 @@ canvas.config(scrollregion=canvas.bbox(tk.ALL))
 
 # Frame para os elementos relacionados ao feedback
 frame_feedback = tk.Frame(root, bg=color_p)
-frame_feedback.pack(side=tk.BOTTOM, pady=10)  # Adiciona espaçamento vertical de 10 pixels
+frame_feedback.pack(side=tk.BOTTOM, pady=2)  # Adiciona espaçamento vertical de 10 pixels
 
 # Widget de texto para exibir mensagens recebidas
 received_messages_text = tk.Text(frame_feedback, height=10, width=50, bg="lightgrey", font=("Arial", 10), state="disabled")
@@ -407,7 +407,7 @@ received_messages_text.pack(side=tk.BOTTOM, padx=10, pady=5)
 
 # Botões para ligar/desligar geral
 frame_geral = tk.Frame(root, bg=color_p)
-frame_geral.pack(side=tk.BOTTOM, pady=10)
+frame_geral.pack(side=tk.BOTTOM, pady=2)
 
 btn_on_geral = tk.Button(frame_geral, text="ON Geral", command=send_ON_geral, bg="lightgreen", fg='black', font=("Arial", 10, "bold"))
 btn_on_geral.pack(side=tk.LEFT, padx=5, pady=1)
@@ -419,7 +419,7 @@ frame_percentage = tk.Frame(root, bg="lightgray")
 frame_percentage.pack(side=tk.BOTTOM, pady=3)
 
 percentage_label = tk.Label(frame_percentage, text="Dimmer:", fg="black", bg="lightgray")
-percentage_label.pack(side=tk.LEFT, padx=(45,10))
+percentage_label.pack(side=tk.LEFT, padx=(45,10), pady=1)
 
 style = ttk.Style()
 style.configure("Custom.Horizontal.TScale",background="gray") 
