@@ -70,12 +70,12 @@ def send_message(ip, message):
         port = 5555
         
         # Envia a mensagem
-        print(f"Enviando mensagem '{message}' para {ip}:{port}")
+        #print(f"Enviando mensagem '{message}' para {ip}:{port}")
         sock.sendto(message.encode(), (ip, port))
         
         # Tenta receber uma resposta
         response, addr = sock.recvfrom(4096)
-        print(f"Resposta recebida de {addr}: {response.decode()}")
+        print(response.decode())
         
         return response.decode()
 
@@ -90,12 +90,19 @@ def send_message(ip, message):
 resposta = udp_scan()
 
 if resposta:
-    print(f"Resposta salva: {resposta}")
+    #print(f"Resposta salva: {resposta}")
     # Extrai e printa as informações da mensagem recebida
     ip = extract_info(resposta)
     
     if ip:
-        # Envia a mensagem 'SA' para o IP recebido
-        send_message(ip, '<SA>')
+        # Loop para enviar quantas mensagens desejar
+        while True:
+            # Solicita a mensagem do usuário
+            mensagem = input("Digite a mensagem para enviar (ou 'sair' para terminar): ")
+            if mensagem.lower() == 'sair':
+                break
+            # Envia a mensagem para o IP recebido
+            mensagem = f'<{mensagem.upper()}>'
+            send_message(ip, mensagem)
 else:
     print("Nenhuma resposta para processar.")

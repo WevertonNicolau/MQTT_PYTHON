@@ -7,9 +7,9 @@ AWS_IOT_ENDPOINT = "a27psqlmoxrfep-ats.iot.us-east-1.amazonaws.com"
 THINGNAME = "TESTE2"
 
 # Preencha com os caminhos para os arquivos de certificado e chave privada
-AWS_CERT_CA = "ca1.pem"
-AWS_CERT_CRT = "certificado.pem"
-AWS_CERT_PRIVATE = "private.key"
+AWS_CERT_CA = "testes/ca1.pem"
+AWS_CERT_CRT = "testes/certificado.pem"
+AWS_CERT_PRIVATE = "testes/private.key"
 
 # Tópicos MQTT
 AWS_IOT_PUBLISH_TOPIC = "esp32/pub"
