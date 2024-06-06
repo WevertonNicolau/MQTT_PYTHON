@@ -9,6 +9,8 @@ import re
 import time
 from PIL import Image, ImageTk
 import sqlite3
+import socket
+
 
 # Informações do servidor MQTT
 server = 'super-author.cloudmqtt.com'
@@ -159,9 +161,10 @@ def create_and_connect_mqtt_client():
     client.connect(server, port)
     client.loop_start()
 
-# Envia uma mensagem MQTT
-def send_message(message):
+def send_message(message, via_ip=False):
     message = message.upper()
+    if message == '' or message == None:
+        return
 
     if message == 'SA' or message == 'SI':
         received_messages_text.config(state="normal")
@@ -176,19 +179,27 @@ def send_message(message):
             received_messages_text.insert(tk.END, "Insira uma mensagem")
             received_messages_text.config(state="disabled")
         else:
-            if message[0] == 'D':
-                try:
-                    if message[4]:
-                        client.publish(publish_topic, message)
-                        print('Mensagem enviada:', message) 
-                except:
+            if via_ip:
                     received_messages_text.config(state="normal")
                     received_messages_text.delete("1.0", tk.END)
-                    received_messages_text.insert(tk.END, "Insira o Canal e o ID")
+                    received_messages_text.insert(tk.END, on_checkbutton_toggled(message))
                     received_messages_text.config(state="disabled")
+                
             else:
-                client.publish(publish_topic, message)
-                print('Mensagem enviada:', message)
+                if message[0] == 'D':
+                    try:
+                        if message[4]:
+                            client.publish(publish_topic, message)
+                            print('Mensagem enviada:', message) 
+                    except:
+                        received_messages_text.config(state="normal")
+                        received_messages_text.delete("1.0", tk.END)
+                        received_messages_text.insert(tk.END, "Insira o Canal e o ID")
+                        received_messages_text.config(state="disabled")
+                else:
+                    client.publish(publish_topic, message)
+                    print('Mensagem enviada:', message)
+
     except AttributeError:
         received_messages_text.config(state="normal")
         received_messages_text.delete("1.0", tk.END)
@@ -198,7 +209,7 @@ def send_message(message):
 # Envia uma mensagem personalizada
 def send_custom_message():
     message = entry.get()
-    send_message(message)
+    send_message(message, via_ip=send_via_ip.get())
 
 # Envia uma mensagem para ligar um canal específico em uma placa
 def send_ON_command(channel, placa):
@@ -217,7 +228,6 @@ def send_ON_geral():
 # Envia uma mensagem para desligar todos os canais de todas as placas
 def send_OFF_geral():
     send_message("OFAO")
-
 
 def destroy_lamp_frames():
     global lamp_frames, lamp_labels
@@ -309,7 +319,102 @@ def get_client_data():
     
     # Cria um dicionário onde a chave é o nome e o valor é o tópico
     return {row[0]: row[1] for row in rows}
-     
+
+def udp_scan():
+    # Cria um socket UDP
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
+    # Define um timeout para o socket
+    sock.settimeout(0.5)
+    
+    # Endereço de broadcast e porta
+    broadcast_address = '255.255.255.255'
+    port = 5555
+    message = "<SI>"
+
+    try:
+        # Configura o socket para permitir envio de broadcast
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        
+        # Envia a mensagem
+        sock.sendto(message.encode(), (broadcast_address, port))
+        
+        # Tenta receber uma resposta
+        response, addr = sock.recvfrom(4096)
+        return response.decode()
+
+    except socket.timeout:
+        print("Nenhuma resposta recebida dentro do tempo limite.")
+        return None
+    except Exception as e:
+        print(f"Ocorreu um erro: {e}")
+        return None
+    finally:
+        # Fecha o socket
+        sock.close()
+
+def extract_info(message):
+    # Define o padrão da expressão regular para capturar as informações
+    pattern = r"<([^>]+)><([^>]+)><([^>]+)><([^>]+)>"
+    match = re.match(pattern, message)
+    
+    if match:
+        # Extrai as informações
+        nome = match.group(1)
+        ip = match.group(2)
+        mac = match.group(3)
+        versao = match.group(4)
+        
+        # Printa as informações
+        print(f"Nome: {nome}")
+        print(f"IP: {ip}")
+        print(f"Endereço MAC: {mac}")
+        print(f"Versão: {versao}")
+        
+        return ip
+    else:
+        print("A mensagem não está no formato esperado.")
+        return None
+
+def on_checkbutton_toggled(message):
+    if send_via_ip.get():
+        try:
+            client.disconnect()
+            client.loop_stop()
+        except:
+            pass
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+        try:
+            # Define o endereço e porta de destino
+            sock.settimeout(0.5)
+            port = 8080
+            resposta = udp_scan()
+            ip = extract_info(resposta)
+            # Conecta ao servidor
+            sock.connect((ip, port))
+                    
+            # Envia a mensagem
+            message = f'<{message}>'
+            sock.sendall(message.encode().upper())
+                    
+            # Tenta receber uma resposta
+            response = sock.recv(4096)
+            print(response.decode())
+            return response.decode()
+
+        except Exception as e:
+            received_messages_text.config(state="normal")
+            received_messages_text.delete("1.0", tk.END)
+            received_messages_text.insert(tk.END, 'Central não encontrada')
+            received_messages_text.config(state="disabled")
+            print(f"Ocorreu um erro: {e}")
+            return None
+        finally:
+                    # Fecha o socket
+            sock.close()
+
+
 color_p = 'lightgray'
 
 # Inicialização da interface gráfica
@@ -468,9 +573,13 @@ btn_send.pack(side=tk.LEFT, padx=5, pady=1)  # Ajusta o padding do botão
 frame_topic = tk.Frame(root, bg=color_p)
 frame_topic.pack(side=tk.BOTTOM, pady=1)  # Adiciona espaçamento vertical de 10 pixels
 
+send_via_ip = tk.BooleanVar(value=False)
+checkbox = tk.Checkbutton(frame_topic, text="Enviar via IP", variable=send_via_ip,command=on_checkbutton_toggled(None), bg=color_p, font=("Arial", 10))
+checkbox.pack(side=tk.LEFT, padx=(80,5), pady=1)
+
 # Texto 'Tópico' atrás da caixa de inserir tópico
 label_topic = tk.Label(frame_topic, text="Tópico:", bg=color_p, font=("Arial", 10))
-label_topic.pack(side=tk.LEFT, padx=(180,5), pady=10)
+label_topic.pack(side=tk.LEFT, padx=(10,5), pady=10)
 
 # Caixa de texto para inserir o tópico
 topic_entry = tk.Entry(frame_topic, font=("Arial", 10))
@@ -492,7 +601,8 @@ while not topic_set:
     time.sleep(0.05)
 
 # Cria um cliente MQTT após o tópico ser definido
-create_and_connect_mqtt_client()
+if not send_via_ip.get():
+    create_and_connect_mqtt_client()
 
 # Mantém a interface gráfica rodando
 root.mainloop()

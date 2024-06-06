@@ -25,7 +25,6 @@ def udp_scan():
         #print("Aguardando resposta...")
         response, addr = sock.recvfrom(4096)
         #print(f"Resposta recebida de {addr}: {response.decode()}")
-        
         return response.decode()
 
     except socket.timeout:
@@ -61,20 +60,23 @@ def extract_info(message):
         print("A mensagem não está no formato esperado.")
         return None
 
-def send_message(ip, message):
-    # Cria um socket UDP
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def send_tcp_message(ip, message):
+    # Cria um socket TCP
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     try:
         # Define o endereço e porta de destino
-        port = 5555
+        port = 8080
+        
+        # Conecta ao servidor
+        sock.connect((ip, port))
         
         # Envia a mensagem
         #print(f"Enviando mensagem '{message}' para {ip}:{port}")
-        sock.sendto(message.encode(), (ip, port))
+        sock.sendall(message.encode())
         
         # Tenta receber uma resposta
-        response, addr = sock.recvfrom(4096)
+        response = sock.recv(4096)
         print(response.decode())
         
         return response.decode()
@@ -101,8 +103,8 @@ if resposta:
             mensagem = input("Digite a mensagem para enviar (ou 'sair' para terminar): ")
             if mensagem.lower() == 'sair':
                 break
-            # Envia a mensagem para o IP recebido
+            # Envia a mensagem para o IP recebido usando TCP
             mensagem = f'<{mensagem.upper()}>'
-            send_message(ip, mensagem)
+            send_tcp_message(ip, mensagem)
 else:
     print("Nenhuma resposta para processar.")
