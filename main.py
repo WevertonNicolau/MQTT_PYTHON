@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.2.2
+# Version: 1.0.3.0
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -71,8 +71,10 @@ def tratar_feedback(feedback):
 
 # Callback para quando uma mensagem MQTT é recebida
 def on_message(client, userdata, msg):
-    feedback = msg.payload.decode("utf-8")
-    #print("Feedback recebido:", feedback)  # Mensagem de depuração
+    if send_via_ip.get():
+        feedback = msg.decode("utf-8")
+    else:
+        feedback = msg.payload.decode("utf-8")
     
     received_messages_text.config(state="normal")
     received_messages_text.delete("1.0", tk.END)
@@ -163,8 +165,6 @@ def create_and_connect_mqtt_client():
 
 def send_message(message, via_ip=False):
     message = message.upper()
-    if message == '' or message == None:
-        return
 
     if message == 'SA' or message == 'SI':
         received_messages_text.config(state="normal")
@@ -180,11 +180,25 @@ def send_message(message, via_ip=False):
             received_messages_text.config(state="disabled")
         else:
             if via_ip:
-                    received_messages_text.config(state="normal")
-                    received_messages_text.delete("1.0", tk.END)
-                    received_messages_text.insert(tk.END, on_checkbutton_toggled(message))
-                    received_messages_text.config(state="disabled")
-                
+                received_messages_text.config(state="normal")
+                received_messages_text.delete("1.0", tk.END)
+                received_messages_text.insert(tk.END, on_checkbutton_toggled(message,False))
+                received_messages_text.config(state="disabled")
+
+                if message[0] == 'D':
+                    try:
+                        if message[4]:
+                            on_checkbutton_toggled(message,False)
+                            print(message)
+                    except:
+                        received_messages_text.config(state="normal")
+                        received_messages_text.delete("1.0", tk.END)
+                        received_messages_text.insert(tk.END, "Insira o Canal e o ID")
+                        received_messages_text.config(state="disabled")
+                else:
+                    on_checkbutton_toggled(message,False)
+                    print(message)
+
             else:
                 if message[0] == 'D':
                     try:
@@ -214,20 +228,20 @@ def send_custom_message():
 # Envia uma mensagem para ligar um canal específico em uma placa
 def send_ON_command(channel, placa):
     placa_str = f"0{placa}" if placa < 10 else str(placa)  # Adiciona um zero à esquerda se a placa for menor que 10
-    send_message(f"OFONC{channel}{placa_str}")
+    send_message(f"OFONC{channel}{placa_str}",via_ip=send_via_ip.get())
 
 # Envia uma mensagem para desligar um canal específico em uma placa
 def send_OFF_command(channel, placa):
     placa_str = f"0{placa}" if placa < 10 else str(placa)  # Adiciona um zero à esquerda se a placa for menor que 10
-    send_message(f"OFFFC{channel}{placa_str}")
+    send_message(f"OFFFC{channel}{placa_str}",via_ip=send_via_ip.get())
 
 # Envia uma mensagem para ligar todos os canais de todas as placas
 def send_ON_geral():
-    send_message("OFAN")
+    send_message("OFAN",via_ip=send_via_ip.get())
 
 # Envia uma mensagem para desligar todos os canais de todas as placas
 def send_OFF_geral():
-    send_message("OFAO")
+    send_message("OFAO",via_ip=send_via_ip.get())
 
 def destroy_lamp_frames():
     global lamp_frames, lamp_labels
@@ -245,12 +259,29 @@ def destroy_lamp_frames():
 # Define o tópico e reinicia a conexão MQTT
 def insert_topic():
     global publish_topic, subscribe_topic, topic_set, client
-    topic = topic_entry.get()
-    publish_topic = f'/Danf/{topic}/V3/Mqtt/Comando'
-    subscribe_topic = f'/Danf/{topic}/V3/Mqtt/Feedback'
-    topic_set = True
-    create_and_connect_mqtt_client()
+    if send_via_ip.get():
+        try:
+            client.disconnect()
+            client.loop_stop()
+        except:
+            pass
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
+        # Define o endereço e porta de destino
+        sock.settimeout(0.5)
+        resposta = udp_scan()
+        ip = extract_info(resposta)
+
+        topic_entry.delete("0", tk.END)
+        topic_entry.insert(0, ip)
+
+    else:
+        topic = topic_entry.get()
+        publish_topic = f'/Danf/{topic}/V3/Mqtt/Comando'
+        subscribe_topic = f'/Danf/{topic}/V3/Mqtt/Feedback'
+        topic_set = True
+        create_and_connect_mqtt_client()
+        
     destroy_lamp_frames()
 
 # Envia a porcentagem selecionada
@@ -258,12 +289,12 @@ def send_percentage(event=None):
     percentage = int(percentage_slider.get())  # Converte para inteiro
     id_canal = id_canal_entry.get()
     if percentage < 10:
-        send_message(f"DM0{percentage}{id_canal}")
+        send_message(f"DM0{percentage}{id_canal}",via_ip=send_via_ip.get())
     else:
-        send_message(f"DM{percentage}{id_canal}")
+        send_message(f"DM{percentage}{id_canal}",via_ip=send_via_ip.get())
 
 def off_Dimmer(canal_id):
-    send_message(F'DM00{canal_id}')
+    send_message(F'DM00{canal_id}',via_ip=send_via_ip.get())
 
 # Atualiza o texto da porcentagem do canal
 def atualizar_porcentagem_texto1(porcentagem):
@@ -276,17 +307,17 @@ def send_ON_placa(placa):
     for channel in range(1, 9):
         time.sleep(0.1)
         if placa < 10:
-            send_message(f"OFONC{channel}0{placa}")
+            send_message(f"OFONC{channel}0{placa}",via_ip=send_via_ip.get())
         else:
-            send_message(f"OFONC{channel}{placa}")
+            send_message(f"OFONC{channel}{placa}",via_ip=send_via_ip.get())
 # Função para desligar todos os canais de uma placa específica
 def send_OFF_placa(placa):
     for channel in range(1, 9):
         time.sleep(0.1)
         if placa < 10:
-            send_message(f"OFFFC{channel}0{placa}")
+            send_message(f"OFFFC{channel}0{placa}",via_ip=send_via_ip.get())
         else:
-            send_message(f"OFFFC{channel}{placa}")
+            send_message(f"OFFFC{channel}{placa}",via_ip=send_via_ip.get())
 
 def filter_combobox_suggestions(event):
     root.after(100, update_combobox_values) 
@@ -341,6 +372,7 @@ def udp_scan():
         
         # Tenta receber uma resposta
         response, addr = sock.recvfrom(4096)
+        #on_message(None,None,response.decode())
         return response.decode()
 
     except socket.timeout:
@@ -370,13 +402,18 @@ def extract_info(message):
         print(f"IP: {ip}")
         print(f"Endereço MAC: {mac}")
         print(f"Versão: {versao}")
+
+        received_messages_text.config(state="normal")
+        received_messages_text.delete("1.0", tk.END)
+        received_messages_text.insert(tk.END, f'Nome: {nome}\nIP: {ip}\nMAC: {mac}\nVersão: {versao}\n')
+        received_messages_text.config(state="disabled")
         
         return ip
     else:
         print("A mensagem não está no formato esperado.")
         return None
 
-def on_checkbutton_toggled(message):
+def on_checkbutton_toggled(message,scan):
     if send_via_ip.get():
         try:
             client.disconnect()
@@ -384,13 +421,19 @@ def on_checkbutton_toggled(message):
         except:
             pass
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        port = 8080
     
+        sock.settimeout(0.5)
         try:
-            # Define o endereço e porta de destino
-            sock.settimeout(0.5)
-            port = 8080
-            resposta = udp_scan()
-            ip = extract_info(resposta)
+            if scan == True:
+                # Define o endereço e porta de destino
+                resposta = udp_scan()
+                ip = extract_info(resposta)
+
+                topic_entry.delete("0", tk.END)
+                topic_entry.insert(0, ip)
+            else:
+                ip = topic_entry.get()
             # Conecta ao servidor
             sock.connect((ip, port))
                     
@@ -400,6 +443,7 @@ def on_checkbutton_toggled(message):
                     
             # Tenta receber uma resposta
             response = sock.recv(4096)
+            on_message(None, None, response)
             print(response.decode())
             return response.decode()
 
@@ -574,7 +618,7 @@ frame_topic = tk.Frame(root, bg=color_p)
 frame_topic.pack(side=tk.BOTTOM, pady=1)  # Adiciona espaçamento vertical de 10 pixels
 
 send_via_ip = tk.BooleanVar(value=False)
-checkbox = tk.Checkbutton(frame_topic, text="Enviar via IP", variable=send_via_ip,command=on_checkbutton_toggled(None), bg=color_p, font=("Arial", 10))
+checkbox = tk.Checkbutton(frame_topic, text="Enviar via IP", variable=send_via_ip,command=on_checkbutton_toggled(None,True), bg=color_p, font=("Arial", 10))
 checkbox.pack(side=tk.LEFT, padx=(80,5), pady=1)
 
 # Texto 'Tópico' atrás da caixa de inserir tópico
