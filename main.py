@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.3.2
+Version = '1.0.3.2'
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -627,6 +627,9 @@ original_values = get_client_data()
 combobox = ttk.Combobox(frame_topic, values=list(original_values.keys()))
 combobox.pack(side=tk.LEFT, padx=(10,10), pady=1)
 combobox.bind('<KeyRelease>', filter_combobox_suggestions)
+
+version_label = tk.Label(root, text=f'Version: {Version}', bg="lightgray", font=("Arial", 8), padx=5, pady=5)
+version_label.place(relx=1.0, rely=0.0, anchor='ne')
 
 # Mantém o programa rodando para receber mensagens somente após o tópico ser definido
 while not topic_set:
