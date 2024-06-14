@@ -324,7 +324,7 @@ def update_combobox_values():
     topic_entry.insert(0, original_values[combobox.get()])
 
 def get_client_data():
-    conn = sqlite3.connect('Clientes.db')
+    conn = sqlite3.connect('main/base_de_dados/Clientes.db')
     cursor = conn.cursor()
     
     cursor.execute('CREATE TABLE IF NOT EXISTS Clientes ('  # Executa uma instrução SQL para criar uma tabela chamada 'clientes'
@@ -456,9 +456,9 @@ root.title("DANF - MQTT")
 root.geometry("1370x700")  # Ajusta o tamanho da janela
 root.configure(bg=color_p)
 
-imageOff = 'img/lampadaapagada.png'
-imageOn = 'img/lampadaacesa.png'
-imageNone = 'img/lampadavermelha.png'
+imageOff = 'main/img/lampadaapagada.png'
+imageOn = 'main/img/lampadaacesa.png'
+imageNone = 'main/img/lampadavermelha.png'
 imageOff = Image.open(imageOff).resize((16, 16), Image.LANCZOS)
 imageOn = Image.open(imageOn).resize((16, 16), Image.LANCZOS)
 imageNone = Image.open(imageNone).resize((16, 16), Image.LANCZOS)
