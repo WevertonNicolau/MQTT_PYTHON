@@ -1,6 +1,6 @@
 # Projeto: Software para análise técnica do painel.
 # Dev: Weverton Nicolau
-# Version: 1.0.3.0
+Version = '1.0.3.2'
 
 import paho.mqtt.client as mqtt
 import tkinter as tk
@@ -178,41 +178,30 @@ def send_message(message, via_ip=False):
             received_messages_text.delete("1.0", tk.END)
             received_messages_text.insert(tk.END, "Insira uma mensagem")
             received_messages_text.config(state="disabled")
+
+        elif message.startswith('DM'):
+            if id_canal_entry.get() == '':
+                received_messages_text.config(state="normal")
+                received_messages_text.delete("1.0", tk.END)
+                received_messages_text.insert(tk.END, "Insira o Canal e o ID")
+                received_messages_text.config(state="disabled")
+            else:
+                if via_ip:
+                    on_checkbutton_toggled(message,False)
+                    print(message)
+                else:
+                    client.publish(publish_topic, message)
+                    print(message)
         else:
             if via_ip:
                 received_messages_text.config(state="normal")
                 received_messages_text.delete("1.0", tk.END)
                 received_messages_text.insert(tk.END, on_checkbutton_toggled(message,False))
                 received_messages_text.config(state="disabled")
-
-                if message[0] == 'D':
-                    try:
-                        if message[4]:
-                            on_checkbutton_toggled(message,False)
-                            print(message)
-                    except:
-                        received_messages_text.config(state="normal")
-                        received_messages_text.delete("1.0", tk.END)
-                        received_messages_text.insert(tk.END, "Insira o Canal e o ID")
-                        received_messages_text.config(state="disabled")
-                else:
-                    on_checkbutton_toggled(message,False)
-                    print(message)
-
+                        
             else:
-                if message[0] == 'D':
-                    try:
-                        if message[4]:
-                            client.publish(publish_topic, message)
-                            print('Mensagem enviada:', message) 
-                    except:
-                        received_messages_text.config(state="normal")
-                        received_messages_text.delete("1.0", tk.END)
-                        received_messages_text.insert(tk.END, "Insira o Canal e o ID")
-                        received_messages_text.config(state="disabled")
-                else:
-                    client.publish(publish_topic, message)
-                    print('Mensagem enviada:', message)
+                client.publish(publish_topic, message)
+                print('Mensagem enviada:', message)
 
     except AttributeError:
         received_messages_text.config(state="normal")
@@ -440,7 +429,7 @@ def on_checkbutton_toggled(message,scan):
             # Envia a mensagem
             message = f'<{message}>'
             sock.sendall(message.encode().upper())
-                    
+            print(message)   
             # Tenta receber uma resposta
             response = sock.recv(4096)
             on_message(None, None, response)
@@ -603,15 +592,15 @@ frame_send.pack(side=tk.BOTTOM, pady=5)  # Adiciona espaçamento vertical de 10 
 
 # Texto 'Mensagem' atrás da caixa de inserir mensagem
 label_message = tk.Label(frame_send, text="Mensagem:", bg=color_p, font=("Arial", 10))
-label_message.pack(side=tk.LEFT, padx=(25,0), pady=1)
+label_message.pack(side=tk.LEFT, padx=(0), pady=1)
 
 # Caixa de texto para enviar mensagens personalizadas
 entry = tk.Entry(frame_send, font=("Arial", 10))
 entry.pack(side=tk.LEFT, padx=(5,10), pady=5)
 
 # Botão para enviar mensagem personalizada
-btn_send = tk.Button(frame_send, text="Enviar Mensagem", command=send_custom_message, bg="gray", fg='white', font=("Arial", 10, "bold"))
-btn_send.pack(side=tk.LEFT, padx=5, pady=1)  # Ajusta o padding do botão
+btn_send = tk.Button(frame_send, text="Enviar", command=send_custom_message, bg="gray", fg='white', font=("Arial", 10, "bold"))
+btn_send.pack(side=tk.LEFT, padx=(5,50), pady=1)  # Ajusta o padding do botão
 
 # Botão para os elementos relacionados ao tópico
 frame_topic = tk.Frame(root, bg=color_p)
@@ -619,7 +608,7 @@ frame_topic.pack(side=tk.BOTTOM, pady=1)  # Adiciona espaçamento vertical de 10
 
 send_via_ip = tk.BooleanVar(value=False)
 checkbox = tk.Checkbutton(frame_topic, text="Enviar via IP", variable=send_via_ip,command=on_checkbutton_toggled(None,True), bg=color_p, font=("Arial", 10))
-checkbox.pack(side=tk.LEFT, padx=(80,5), pady=1)
+checkbox.pack(side=tk.LEFT, padx=(10,5), pady=1)
 
 # Texto 'Tópico' atrás da caixa de inserir tópico
 label_topic = tk.Label(frame_topic, text="Tópico:", bg=color_p, font=("Arial", 10))
@@ -631,13 +620,16 @@ topic_entry.insert(0, "TESTE_2024")
 topic_entry.pack(side=tk.LEFT, padx=(0,10), pady=1)
 
 # Botão para inserir o tópico
-btn_insert_topic = tk.Button(frame_topic, text="Inserir Tópico", command=insert_topic, bg="gray", fg='white', font=("Arial", 10, "bold"))
+btn_insert_topic = tk.Button(frame_topic, text="OK", command=insert_topic, bg="gray", fg='white', font=("Arial", 10, "bold"))
 btn_insert_topic.pack(side=tk.LEFT, padx=(5,10), pady=5)  # Ajusta o padding do botão
 
 original_values = get_client_data()
 combobox = ttk.Combobox(frame_topic, values=list(original_values.keys()))
 combobox.pack(side=tk.LEFT, padx=(10,10), pady=1)
 combobox.bind('<KeyRelease>', filter_combobox_suggestions)
+
+version_label = tk.Label(root, text=f'Version: {Version}', bg="lightgray", font=("Arial", 8), padx=5, pady=5)
+version_label.place(relx=1.0, rely=0.0, anchor='ne')
 
 # Mantém o programa rodando para receber mensagens somente após o tópico ser definido
 while not topic_set:
