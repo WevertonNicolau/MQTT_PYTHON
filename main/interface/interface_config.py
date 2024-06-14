@@ -1,9 +1,13 @@
 import tkinter as tk
 from PIL import Image, ImageTk
+from mensages.mensages_functions import send_OFF_command, send_ON_command
 
 lamp_labels = {}
-
 lamp_frames = {}
+color_p = 'lightgray'
+
+# Inicialização da interface gráfica
+root = tk.Tk()
 
 imageOff = 'main/img/lampadaapagada.png'
 imageOn = 'main/img/lampadaacesa.png'
@@ -12,10 +16,44 @@ imageOff = Image.open(imageOff).resize((16, 16), Image.LANCZOS)
 imageOn = Image.open(imageOn).resize((16, 16), Image.LANCZOS)
 imageNone = Image.open(imageNone).resize((16, 16), Image.LANCZOS)
 
-# Convertendo imagens para PhotoImage
+# Convertendo imagens para PhotoImage após a criação da janela principal
 imageOff = ImageTk.PhotoImage(imageOff)
 imageOn = ImageTk.PhotoImage(imageOn)
 imageNone = ImageTk.PhotoImage(imageNone)
+
+def update_lamp_image(placa, canal, status):
+    placa_str = 'Placa ' + str(placa).lstrip('0')
+    if placa_str in lamp_labels:
+        if canal in lamp_labels[placa_str]:
+            lamp_label = lamp_labels[placa_str][canal]
+            update_placa_feedback(placa_str)
+            if status == "D":
+                change_lamp_image(lamp_label, imageOff)
+            elif status == "L":
+                change_lamp_image(lamp_label, imageOn)
+            else:
+                change_lamp_image(lamp_label, imageNone)
+                print("Status desconhecido:", status)
+        else:
+            print("Canal não encontrado para placa", placa_str)
+    else:
+        print("Placa não encontrada:", placa_str)
+
+def change_lamp_image(lamp_label, image):
+    lamp_label.config(image=image)
+    lamp_label.image = image
+
+def update_placa_feedback(placa):
+    placa_str = 'Placa ' + str(placa).lstrip('0')
+    if placa_str in lamp_labels:
+        feedback_label = lamp_labels[placa_str].get("feedback")
+        if feedback_label:
+            any_on = any(
+                lamp_label.cget("image") == str(imageOn)
+                for lamp_label in lamp_labels[placa_str].values()
+                if lamp_label != feedback_label
+            )
+            change_lamp_image(feedback_label, imageOn if any_on else imageOff)
 
 def create_lamp_label(placa, canal):
     placa_str = str(placa)
@@ -38,14 +76,24 @@ def create_lamp_label(placa, canal):
 
 
 def inicia_interface():
-
-    color_p = 'lightgray'
-    # Inicialização da interface gráfica
-    root = tk.Tk()
+    root.title("DANF - MQTT")
     root.title("DANF - MQTT")
     root.geometry("1370x700")  # Ajusta o tamanho da janela
     root.configure(bg=color_p)
 
+    imageOff = 'main/img/lampadaapagada.png'
+    imageOn = 'main/img/lampadaacesa.png'
+    imageNone = 'main/img/lampadavermelha.png'
+    imageOff = Image.open(imageOff).resize((16, 16), Image.LANCZOS)
+    imageOn = Image.open(imageOn).resize((16, 16), Image.LANCZOS)
+    imageNone = Image.open(imageNone).resize((16, 16), Image.LANCZOS)
+
+    # Convertendo imagens para PhotoImage
+    imageOff = ImageTk.PhotoImage(imageOff)
+    imageOn = ImageTk.PhotoImage(imageOn)
+    imageNone = ImageTk.PhotoImage(imageNone)
+
+    # Canvas principal para permitir rolagem horizontal
     canvas = tk.Canvas(root)
     canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
@@ -61,8 +109,9 @@ def inicia_interface():
     # Lista de placas
     placas = [f"Placa {i}" for i in range(1, 17)]
     # Dicionário para armazenar os frames de círculos das bolinhas
-    
+    lamp_frames = {}
 
+    # Criar grupos de botões para cada placa
     for idx, placa in enumerate(placas):
         lamp_frame = tk.Frame(frame_principal, bg=color_p)
         lamp_frame.grid(row=1, column=idx * 3 + 2, padx=(1, 15), pady=5)  # Espaçamento menor na lateral esquerda e um pouco de espaçamento vertical
@@ -105,6 +154,5 @@ def inicia_interface():
 
             btn_channel_off = tk.Button(frame_off, text=f"Canal {channel}", command=lambda ch=channel, p=idx + 1: send_OFF_command(ch, p), bg="indianred", fg="black", width=6, padx=1, pady=1, font=("Arial", 9, "bold"))
             btn_channel_off.pack(side=tk.TOP, padx=2, pady=2)
-
-
-    root.mainloop()
+        
+        root.mainloop()
